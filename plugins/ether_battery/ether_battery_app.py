@@ -99,18 +99,25 @@ class EtherBatteryApp(ZApplication):
     @node_from(from_name="点击确认按钮", status="继续合成")
     @operation_node(name="点击合成", node_max_retry_times=5)
     def click_synthesis(self) -> OperationRoundResult:
-        """识别下半屏并点击"合成"。"""
+        """检测"素材不足"或点击"合成"按钮。"""
         screen = self.last_screenshot
         if screen is None:
             return self.round_retry(wait=0.5)
-        # 下半屏区域 (大约 y 从屏幕一半开始)
-        screen_h = screen.shape[0]
-        screen_w = screen.shape[1]
-        lower_half = Rect(0, screen_h // 2, screen_w, screen_h)
 
-        area = ScreenArea(pc_rect=lower_half)
+        # 检测"合成素材不足"文字
+        material_area = ScreenArea(
+            pc_rect=Rect(*ether_battery_const.RECT_MATERIAL_SHORTAGE)
+        )
+        result = self.round_by_ocr(screen, "素材不足", area=material_area)
+        if result.is_success:
+            return self.round_success(status="素材不足")
+
+        # 点击"合成"按钮
+        synthesis_area = ScreenArea(
+            pc_rect=Rect(*ether_battery_const.RECT_SYNTHESIS_BUTTON)
+        )
         result = self.round_by_ocr_and_click(
-            screen, "合成", area=area, success_wait=1, retry_wait=0.5
+            screen, "合成", area=synthesis_area, success_wait=1, retry_wait=0.5
         )
 
         if result.is_success:
@@ -158,8 +165,20 @@ class EtherBatteryApp(ZApplication):
         return self.round_retry(wait=0.5)
 
     @node_from(from_name="点击合成", status="退出合成")
+    @node_from(from_name="点击合成", status="素材不足")
     @node_from(from_name="点击确认按钮", status="素材不足")
     @node_notify(when=NotifyTiming.PREVIOUS_DONE, send_image=True, detail=True)
+    @operation_node(name="关闭合成界面")
+    def close_synthesis(self) -> OperationRoundResult:
+        """点击左上角返回按钮关闭合成界面。
+
+        BackToNormalWorld 的"完成"模板会误匹配合成界面的"合成"按钮，
+        导致反复点击无法退出。需要先手动关闭合成 UI。
+        """
+        self.round_by_click_area("画面-通用", "返回")
+        return self.round_success(wait=1)
+
+    @node_from(from_name="关闭合成界面")
     @operation_node(name="结束返回大世界")
     def back_to_world_final(self) -> OperationRoundResult:
         """返回大世界。"""
