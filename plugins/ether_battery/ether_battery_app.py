@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 from one_dragon.base.geometry.rectangle import Rect
 from one_dragon.base.operation.operation_edge import node_from
 from one_dragon.base.operation.operation_node import operation_node
+from one_dragon.base.operation.operation_notify import NotifyTiming, node_notify
 from one_dragon.base.operation.operation_round_result import OperationRoundResult
 from one_dragon.base.screen.screen_area import ScreenArea
 from zzz_od.application.zzz_application import ZApplication
@@ -158,6 +159,7 @@ class EtherBatteryApp(ZApplication):
 
     @node_from(from_name="点击合成", status="退出合成")
     @node_from(from_name="点击确认按钮", status="素材不足")
+    @node_notify(when=NotifyTiming.PREVIOUS_DONE, send_image=True, detail=True)
     @operation_node(name="结束返回大世界")
     def back_to_world_final(self) -> OperationRoundResult:
         """返回大世界。"""

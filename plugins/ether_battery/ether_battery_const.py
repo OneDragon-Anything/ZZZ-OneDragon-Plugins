@@ -3,8 +3,8 @@
 # ============ 核心常量 (必需) ============
 APP_ID = "ether_battery"
 APP_NAME = "以太电池"
-NEED_NOTIFY = False
 DEFAULT_GROUP = True  # True: 出现在一条龙列表, False: 不出现
+NEED_NOTIFY = True  # 启用通知（开始/成功/失败）
 
 # ============ 插件元数据 (可选，用于 GUI 显示) ============
 PLUGIN_AUTHOR = "Usagi-wusaqi"
