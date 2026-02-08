@@ -24,9 +24,14 @@ from zzz_od.application.zzz_application import ZApplication
 from zzz_od.operation.back_to_normal_world import BackToNormalWorld
 
 from . import ether_battery_const
+from .ether_battery_config import EtherBatteryConfig
 
 if TYPE_CHECKING:
     from zzz_od.context.zzz_context import ZContext
+
+# 画面区域坐标 (1080p)
+_RECT_MATERIAL_SHORTAGE = (1235, 835, 1855, 975)  # "合成素材不足" 文字区域
+_RECT_SYNTHESIS_BUTTON = (1525, 995, 1855, 1065)  # "合成" 按钮区域
 
 
 class EtherBatteryApp(ZApplication):
@@ -42,6 +47,15 @@ class EtherBatteryApp(ZApplication):
         self.synthesis_fail_count = 0  # 点击合成无反应的计数器
         self.confirm_fail_count = 0  # 点击确认无反应的计数器
         self.confirm_click_count = 0  # 确认按钮点击次数（合成需要点2次）
+        self.synthesis_count = 0  # 已合成次数
+
+        self._config: EtherBatteryConfig | None = None
+
+    @property
+    def config(self) -> EtherBatteryConfig:
+        if self._config is None:
+            self._config = self.ctx.run_context.get_config(ether_battery_const.APP_ID)
+        return self._config
 
     @operation_node(name="返回大世界", is_start_node=True)
     def back_to_world(self) -> OperationRoundResult:
@@ -105,17 +119,13 @@ class EtherBatteryApp(ZApplication):
             return self.round_retry(wait=0.5)
 
         # 检测"合成素材不足"文字
-        material_area = ScreenArea(
-            pc_rect=Rect(*ether_battery_const.RECT_MATERIAL_SHORTAGE)
-        )
+        material_area = ScreenArea(pc_rect=Rect(*_RECT_MATERIAL_SHORTAGE))
         result = self.round_by_ocr(screen, "素材不足", area=material_area)
         if result.is_success:
             return self.round_success(status="素材不足")
 
         # 点击"合成"按钮
-        synthesis_area = ScreenArea(
-            pc_rect=Rect(*ether_battery_const.RECT_SYNTHESIS_BUTTON)
-        )
+        synthesis_area = ScreenArea(pc_rect=Rect(*_RECT_SYNTHESIS_BUTTON))
         result = self.round_by_ocr_and_click(
             screen, "合成", area=synthesis_area, success_wait=1, retry_wait=0.5
         )
@@ -126,7 +136,7 @@ class EtherBatteryApp(ZApplication):
             return result
 
         self.synthesis_fail_count += 1
-        if self.synthesis_fail_count >= 3:
+        if self.synthesis_fail_count >= self.config.synthesis_fail_max:
             return self.round_success(status="退出合成")
         return self.round_retry(wait=0.5)
 
@@ -156,17 +166,24 @@ class EtherBatteryApp(ZApplication):
             # 第二次确认后返回继续合成
             if self.confirm_click_count >= 2:
                 self.confirm_click_count = 0
+                self.synthesis_count += 1
+                if (
+                    self.config.max_daily_synthesis > 0
+                    and self.synthesis_count >= self.config.max_daily_synthesis
+                ):
+                    return self.round_success(status="达到合成上限", wait=0.5)
                 return self.round_success(status="继续合成", wait=0.5)
             return self.round_success(status="继续确认")
 
         self.confirm_fail_count += 1
-        if self.confirm_fail_count >= 3:
+        if self.confirm_fail_count >= self.config.confirm_fail_max:
             return self.round_success(status="素材不足")
         return self.round_retry(wait=0.5)
 
     @node_from(from_name="点击合成", status="退出合成")
     @node_from(from_name="点击合成", status="素材不足")
     @node_from(from_name="点击确认按钮", status="素材不足")
+    @node_from(from_name="点击确认按钮", status="达到合成上限")
     @node_notify(when=NotifyTiming.PREVIOUS_DONE, send_image=True, detail=True)
     @operation_node(name="关闭合成界面")
     def close_synthesis(self) -> OperationRoundResult:

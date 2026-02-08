@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from one_dragon.base.operation.application.application_config import ApplicationConfig
 from one_dragon.base.operation.application.application_factory import ApplicationFactory
 from one_dragon.base.operation.application_base import Application
 from one_dragon.base.operation.application_run_record import AppRunRecord
@@ -34,6 +35,11 @@ class EtherBatteryFactory(ApplicationFactory):
         from .ether_battery_app import EtherBatteryApp
 
         return EtherBatteryApp(self.ctx)
+
+    def create_config(self, instance_idx: int, group_id: str) -> ApplicationConfig:
+        from .ether_battery_config import EtherBatteryConfig
+
+        return EtherBatteryConfig(instance_idx, group_id)
 
     def create_run_record(self, instance_idx: int) -> AppRunRecord:
         from .ether_battery_run_record import EtherBatteryRunRecord
