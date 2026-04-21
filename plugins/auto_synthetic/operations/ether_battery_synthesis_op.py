@@ -7,12 +7,9 @@ from one_dragon.base.geometry.rectangle import Rect
 from one_dragon.base.operation.operation_edge import node_from
 from one_dragon.base.operation.operation_node import operation_node
 from one_dragon.base.operation.operation_round_result import OperationRoundResult
-from one_dragon.base.screen.screen_area import ScreenArea
 from one_dragon.utils import cv2_utils, str_utils
-from zzz_od.operation.back_to_normal_world import BackToNormalWorld
 from zzz_od.operation.goto.goto_menu import GotoMenu
 from zzz_od.operation.zzz_operation import ZOperation
-from .common_areas import EtherBatteryCoordinate
 
 if TYPE_CHECKING:
     from zzz_od.context.zzz_context import ZContext
@@ -64,18 +61,14 @@ class EtherBatterySynthesisOp(ZOperation):
         """前往材料道具界面"""
         # 必须等待1秒，不然会因为仓库界面没有完全加载导致操作卡在下个节点
         time.sleep(1)
-        self.ctx.controller.click(Rect(*EtherBatteryCoordinate.TAB_MATERIALS.value).center)
+        self.ctx.controller.click(Rect(*(1605, 124, 1676, 212)).center)
         return self.round_success()
 
     @node_from(from_name='前往材料道具')
     @operation_node(name='前往合成')
     def goto_synthesis(self) -> OperationRoundResult:
         """前往电池合成界面"""
-        return self.round_by_ocr_and_click(
-            self.last_screenshot,
-            "道具处理",
-            area=ScreenArea(pc_rect=Rect(*EtherBatteryCoordinate.TEXT_ITEM_PROCESS.value))
-        )
+        return self.round_by_find_and_click_area(self.last_screenshot, '仓库-材料道具', "道具处理")
 
     @node_from(from_name='前往合成')
     @operation_node(name='检查合成条件')
@@ -83,15 +76,12 @@ class EtherBatterySynthesisOp(ZOperation):
         """检查合成条件"""
         # 截至到绝区零2.7版本道具处理界面的首位可合成物品是以太电池，所以有了下面的逻辑
         # 不排除存在后续版本更新导致这个方法逻辑失效，插件的支持还是太少了，如果可以使用主程序的模板识别功能会好很多
-        result = self.round_by_ocr(
-            self.last_screenshot,
-            "以太电池",
-            area=ScreenArea(pc_rect=Rect(*EtherBatteryCoordinate.TEXT_ETHER_BATTERY.value))
-        )
+        area = self.ctx.screen_loader.get_area('仓库-材料道具-道具处理', '以太电池')
+        result = self.round_by_ocr(self.last_screenshot, "以太电池", area=area)
         if result.is_success:
-            time.sleep(0.5)
-            self.ctx.controller.click(Rect(*EtherBatteryCoordinate.IMG_PREPAID_CARD.value).center)
-            return self.round_success(status='可合成')
+            return self.round_by_find_and_click_area(
+                self.last_screenshot, '仓库-材料道具-道具处理', "图像-储值电卡"
+            )
         else:
             # 移除了模板匹配电池图片的逻辑
             if self.max_synthetic_quantity_from_battery_charge < 1:
@@ -103,16 +93,14 @@ class EtherBatterySynthesisOp(ZOperation):
     @operation_node(name='第二次计算合成数量')
     def calculation_max_synthetic_quantity_from_prepaid_power_card(self) -> OperationRoundResult:
         """根据储值电卡数量计算合成的最大数量"""
-        time.sleep(0.5)
-
-        screen = self.screenshot()
-
-        part = cv2_utils.crop_image_only(screen, Rect(*EtherBatteryCoordinate.TEXT_PREPAID_CARD.value))
+        area = self.ctx.screen_loader.get_area('仓库-材料道具-道具处理', '储值电卡数量')
+        part = cv2_utils.crop_image_only(self.last_screenshot, area.rect)
         ocr_result = self.ctx.ocr.run_ocr_single_line(part)
         digit = str_utils.get_positive_digits(ocr_result, None)
 
-        time.sleep(0.5)
-        self.ctx.controller.click(Rect(*EtherBatteryCoordinate.IMG_PREPAID_CARD.value).center)
+        self.round_by_find_and_click_area(
+            self.last_screenshot, '仓库-材料道具-道具处理', "图像-储值电卡"
+        )
 
         if digit is None:
             return self.round_retry('未识别到储值电卡数量', wait=1)
@@ -142,7 +130,7 @@ class EtherBatterySynthesisOp(ZOperation):
     def _click_increase_button(self, number: int) -> bool:
         """点击增加按钮"""
         for _ in range(number):
-            self.ctx.controller.click(Rect(*EtherBatteryCoordinate.BTN_INCREASE.value).center)
+            self.round_by_click_area('仓库-材料道具-道具处理', "按钮-增加")
             time.sleep(0.2)
         return True
 
@@ -150,10 +138,8 @@ class EtherBatterySynthesisOp(ZOperation):
     @operation_node(name='执行合成')
     def perform_synthesis(self) -> OperationRoundResult:
         """执行合成"""
-        result = self.round_by_ocr_and_click(
-            self.last_screenshot,
-            "合成",
-            area=ScreenArea(pc_rect=Rect(*EtherBatteryCoordinate.BTN_SYNTHESIS.value))
+        result = self.round_by_find_and_click_area(
+            self.last_screenshot,"仓库-材料道具-道具处理", "按钮-合成"
         )
         if result.is_success:
             return self.round_success()
@@ -163,10 +149,10 @@ class EtherBatterySynthesisOp(ZOperation):
     @operation_node(name='确认合成')
     def confirm(self) -> OperationRoundResult:
         """确认合成"""
-        result = self.round_by_ocr_and_click(
+        result = self.round_by_find_and_click_area(
             self.last_screenshot,
-            "确认",
-            area=ScreenArea(pc_rect=Rect(*EtherBatteryCoordinate.BTN_CONFIRM.value))
+            "仓库-材料道具-道具处理",
+            "按钮-确认",
         )
         if result.is_success:
             return self.round_success()

@@ -3,15 +3,12 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING
 
-from one_dragon.base.geometry.rectangle import Rect
 from one_dragon.base.operation.operation_edge import node_from
 from one_dragon.base.operation.operation_node import operation_node
 from one_dragon.base.operation.operation_round_result import OperationRoundResult
-from one_dragon.base.screen.screen_area import ScreenArea
 from zzz_od.operation.transport import Transport
 from zzz_od.operation.wait_normal_world import WaitNormalWorld
 from zzz_od.operation.zzz_operation import ZOperation
-from .common_areas import HifiMasterCoordinate
 
 if TYPE_CHECKING:
     from zzz_od.context.zzz_context import ZContext
@@ -33,11 +30,7 @@ class HifiMasterSynthesisOp(ZOperation):
     @operation_node(name='等待加载', node_max_retry_times=60)
     def wait_loading(self) -> OperationRoundResult:
         """等待加载"""
-        result = self.round_by_ocr(
-            self.last_screenshot,
-            "合成",
-            area=ScreenArea(pc_rect=Rect(*HifiMasterCoordinate.TEXT_SYNTHESIS.value))
-        )
+        result = self.round_by_find_area(self.last_screenshot, "音像店", "合成")
         if result.is_success:
             return self.round_success(status='合成')
 
@@ -62,29 +55,20 @@ class HifiMasterSynthesisOp(ZOperation):
     @operation_node(name='打开合成')
     def open_synthesis(self) -> OperationRoundResult:
         """打开合成界面"""
-        time.sleep(1)
-
-        self.ctx.controller.click(Rect(*HifiMasterCoordinate.BTN_SYNTHESIS.value).center)
-
-        return self.round_success()
+        result = self.round_by_find_and_click_area(self.last_screenshot, "音像店", "合成")
+        if result.is_success:
+            return self.round_success()
+        return self.round_retry(status=result.status, wait=1)
 
     @node_from(from_name='打开合成')
     @operation_node(name='识别界面')
     def check_ui(self) -> OperationRoundResult:
         """识别界面"""
-        result = self.round_by_ocr(
-            self.last_screenshot,
-            "一键合成",
-            area=ScreenArea(pc_rect=Rect(*HifiMasterCoordinate.BTN_ONE_CLICK_SYNTHESIS.value))
-        )
+        result = self.round_by_find_area(self.last_screenshot, "音像店", "一键合成")
         if result.is_success:
             return self.round_success(status='可合成')
 
-        result = self.round_by_ocr(
-            self.last_screenshot,
-            "合成素材不足",
-            area=ScreenArea(pc_rect=Rect(*HifiMasterCoordinate.TEXT_INSUFFICIENT_MATERIAL.value))
-        )
+        result = self.round_by_find_area(self.last_screenshot,"音像店", "合成素材不足")
         if result.is_success:
             return self.round_success(status='素材不足')
 
@@ -94,11 +78,7 @@ class HifiMasterSynthesisOp(ZOperation):
     @operation_node(name='执行合成')
     def perform_synthesis(self) -> OperationRoundResult:
         """执行合成"""
-        result = self.round_by_ocr_and_click(
-            self.last_screenshot,
-            "一键合成",
-            area=ScreenArea(pc_rect=Rect(*HifiMasterCoordinate.BTN_ONE_CLICK_SYNTHESIS.value))
-        )
+        result = self.round_by_find_and_click_area(self.last_screenshot, "音像店", "一键合成")
         if result.is_success:
             return self.round_success(result.status, wait=1)
         return self.round_retry(wait=1)
@@ -107,11 +87,7 @@ class HifiMasterSynthesisOp(ZOperation):
     @operation_node(name='确认合成')
     def confirm(self) -> OperationRoundResult:
         """确认合成"""
-        result = self.round_by_ocr_and_click(
-            self.last_screenshot,
-            "确认",
-            area=ScreenArea(pc_rect=Rect(*HifiMasterCoordinate.BTN_CONFIRM.value))
-        )
+        result = self.round_by_find_and_click_area(self.last_screenshot, "音像店","确认")
         if result.is_success:
             return self.round_success(result.status, wait=1)
         return self.round_retry(wait=1)
