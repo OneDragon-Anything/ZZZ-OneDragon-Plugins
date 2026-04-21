@@ -4,7 +4,6 @@ import time
 from typing import TYPE_CHECKING
 
 from one_dragon.base.geometry.rectangle import Rect
-from one_dragon.base.matcher.match_result import MatchResult
 from one_dragon.base.operation.operation_edge import node_from
 from one_dragon.base.operation.operation_node import operation_node
 from one_dragon.base.operation.operation_round_result import OperationRoundResult
@@ -13,8 +12,6 @@ from one_dragon.base.screen.screen_area import ScreenArea
 from one_dragon.utils import cv2_utils, str_utils
 from zzz_od.operation.back_to_normal_world import BackToNormalWorld
 from zzz_od.operation.zzz_operation import ZOperation
-
-from .common_areas import CommonCoordinate, OutpostLogisticsCoordinate
 
 if TYPE_CHECKING:
     from zzz_od.context.zzz_context import ZContext
@@ -53,7 +50,7 @@ class OutpostLogisticsOperation(ZOperation):
         result = self.round_by_ocr_and_click(
             self.last_screenshot,
             "哨塔后勤",
-            area=ScreenArea(pc_rect=Rect(*OutpostLogisticsCoordinate.BTN_LOGISTICS_SHOP.value))
+            area=ScreenArea(pc_rect=Rect(*(836, 409, 1131, 535)))
         )
 
         if result.is_success:
@@ -65,9 +62,8 @@ class OutpostLogisticsOperation(ZOperation):
     @operation_node(name='计算最大获取数量')
     def calculate_max_quantity(self) -> OperationRoundResult:
         """计算最大获取数量（零号业绩）"""
-        part = cv2_utils.crop_image_only(
-            self.last_screenshot, Rect(*CommonCoordinate.TEXT_CURRENCY.value)
-        )
+        area = self.ctx.screen_loader.get_area("自动获取储值电卡-通用", '文本-货币数量')
+        part = cv2_utils.crop_image_only(self.last_screenshot, area.rect)
         ocr_result = self.ctx.ocr.run_ocr_single_line(part)
         digit = str_utils.get_positive_digits(ocr_result, None)
 
@@ -86,27 +82,20 @@ class OutpostLogisticsOperation(ZOperation):
     def select_prepaid_card(self) -> OperationRoundResult:
         """选择储值电卡"""
         # 尝试点击文本
-        result = self.round_by_ocr_and_click(
-            self.last_screenshot,
-            "储值电卡",
-            area=ScreenArea(pc_rect=Rect(*OutpostLogisticsCoordinate.ITEM_LIST.value))
-        )
+        area = self.ctx.screen_loader.get_area("自动获取储值电卡-通用", "道具列表")
+        result = self.round_by_ocr_and_click(self.last_screenshot, "储值电卡", area)
         if result.is_success:
             return self.round_success(status=result.status)
 
         # 向下滚动并重试
-        screen_utils.scroll_area(self.ctx, area=ScreenArea(pc_rect=Rect(*OutpostLogisticsCoordinate.ITEM_LIST.value)))
+        screen_utils.scroll_area(self.ctx, area)
         return self.round_retry(wait=1)
 
     @node_from(from_name='选择储值电卡')
     @operation_node(name='检查获取条件')
     def check_synthesis(self) -> OperationRoundResult:
         """检查获取条件"""
-        result = self.round_by_ocr(
-            self.last_screenshot,
-            "已售罄",
-            area=ScreenArea(pc_rect=Rect(*CommonCoordinate.TEXT_SOLDOUT.value))
-        )
+        result = self.round_by_find_area(self.last_screenshot, "自动获取储值电卡-通用", "已售罄")
         if result.is_success:
             return self.round_success(status='已售罄')
         else:
@@ -126,7 +115,7 @@ class OutpostLogisticsOperation(ZOperation):
     def _click_increase_button(self, number: int) -> bool:
         """点击增加按钮"""
         for _ in range(number):
-            self.ctx.controller.click(Rect(*CommonCoordinate.BTN_INCREASE.value).center)
+            self.round_by_click_area("自动获取储值电卡-通用", "按钮-增加")
             time.sleep(0.2)
         return True
 
@@ -134,8 +123,8 @@ class OutpostLogisticsOperation(ZOperation):
     @operation_node(name='确认')
     def confirm_purchase(self) -> OperationRoundResult:
         """确认购买"""
-        result = self.round_by_ocr_and_click(
-            self.last_screenshot, "确认", area=ScreenArea(pc_rect=Rect(*CommonCoordinate.BTN_CONFIRM.value))
+        result = self.round_by_find_and_click_area(
+            self.last_screenshot, "自动获取储值电卡-通用", "按钮-确认"
         )
         if result.is_success:
             return self.round_success(result.status, wait=1)
