@@ -56,10 +56,10 @@ class AutoSyntheticApp(ZApplication):
 
     def _get_next_task_status(self) -> OperationRoundResult:
         """获取下一个任务的状态"""
-        if self._current_task_index >= len(self._task_queue):
+        if self.current_task_index >= len(self._task_queue):
             return self.round_success(status='全部完成')
 
-        current_task = self._task_queue[self._current_task_index]
+        current_task = self._task_queue[self.current_task_index]
 
         return self.round_success(status=current_task)
 
