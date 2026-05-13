@@ -22,13 +22,7 @@ class EtherBatteryFactory(ApplicationFactory):
     """以太电池（电卡合成）插件工厂。"""
 
     def __init__(self, ctx: ZContext) -> None:
-        ApplicationFactory.__init__(
-            self,
-            app_id=ether_battery_const.APP_ID,
-            app_name=ether_battery_const.APP_NAME,
-            need_notify=ether_battery_const.NEED_NOTIFY,
-            default_group=ether_battery_const.DEFAULT_GROUP,
-        )
+        ApplicationFactory.__init__(self, ether_battery_const)
         self.ctx = ctx
 
     def create_application(self, instance_idx: int, group_id: str) -> Application:
