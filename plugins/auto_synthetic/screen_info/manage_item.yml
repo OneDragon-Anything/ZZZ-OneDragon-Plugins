@@ -1,0 +1,102 @@
+screen_id: manage_item
+screen_name: 仓库-材料道具-道具处理
+pc_alt: false
+area_list:
+- area_name: 标题-道具处理
+  id_mark: true
+  pc_rect:
+  - 164
+  - 21
+  - 324
+  - 88
+  text: 道具处理
+  lcs_percent: 0.5
+  template_sub_dir: ''
+  template_id: ''
+  template_match_threshold: 0.7
+  color_range: null
+  goto_list: []
+- area_name: 文本-以太电池
+  id_mark: false
+  pc_rect:
+  - 1405
+  - 191
+  - 1574
+  - 253
+  text: 以太电池
+  lcs_percent: 0.5
+  template_sub_dir: ''
+  template_id: ''
+  template_match_threshold: 0.7
+  color_range: null
+  goto_list: []
+- area_name: 按钮-合成
+  id_mark: true
+  pc_rect:
+  - 1655
+  - 1006
+  - 1740
+  - 1050
+  text: 合成
+  lcs_percent: 0.5
+  template_sub_dir: ''
+  template_id: ''
+  template_match_threshold: 0.7
+  color_range: null
+  goto_list: []
+- area_name: 按钮-确认
+  id_mark: false
+  pc_rect:
+  - 806
+  - 685
+  - 1120
+  - 773
+  text: 确认
+  lcs_percent: 0.5
+  template_sub_dir: ''
+  template_id: ''
+  template_match_threshold: 0.7
+  color_range: null
+  goto_list: []
+- area_name: 图像-储值电卡
+  id_mark: false
+  pc_rect:
+  - 1371
+  - 651
+  - 1525
+  - 805
+  text: ''
+  lcs_percent: 0.5
+  template_sub_dir: ''
+  template_id: ''
+  template_match_threshold: 0.7
+  color_range: null
+  goto_list: []
+- area_name: 储值电卡数量
+  id_mark: false
+  pc_rect:
+  - 732
+  - 338
+  - 787
+  - 371
+  text: ''
+  lcs_percent: 0.5
+  template_sub_dir: ''
+  template_id: ''
+  template_match_threshold: 0.7
+  color_range: null
+  goto_list: []
+- area_name: 按钮-增加
+  id_mark: false
+  pc_rect:
+  - 1763
+  - 430
+  - 1843
+  - 513
+  text: ''
+  lcs_percent: 0.5
+  template_sub_dir: ''
+  template_id: ''
+  template_match_threshold: 0.7
+  color_range: null
+  goto_list: []
