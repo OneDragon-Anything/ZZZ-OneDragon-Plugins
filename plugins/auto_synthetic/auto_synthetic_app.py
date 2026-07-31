@@ -9,7 +9,6 @@ from one_dragon.base.operation.operation_round_result import OperationRoundResul
 from zzz_od.application.zzz_application import ZApplication
 from zzz_od.operation.back_to_normal_world import BackToNormalWorld
 from . import auto_synthetic_const
-from .operations.ether_battery_synthesis_op import EtherBatterySynthesisOp
 from .operations.hifi_master_synthesis_op import HifiMasterSynthesisOp
 
 if TYPE_CHECKING:
@@ -19,7 +18,6 @@ if TYPE_CHECKING:
 
 class AutoSyntheticApp(ZApplication):
     TASK_HIFI_MASTER = '母盘合成'
-    TASK_ETHER_BATTERY = '电池合成'
 
     def __init__(self, ctx: ZContext) -> None:
         ZApplication.__init__(
@@ -44,8 +42,6 @@ class AutoSyntheticApp(ZApplication):
 
         if self.config.hifi_master_copy:
             self._task_queue.append(self.TASK_HIFI_MASTER)
-        if self.config.source_ether_battery:
-            self._task_queue.append(self.TASK_ETHER_BATTERY)
 
         if not self._task_queue:
             return self.round_success(status='无任务')
@@ -77,27 +73,11 @@ class AutoSyntheticApp(ZApplication):
             return self._get_next_task_status()
         return result
 
-    # ==================== 电池合成节点 ====================
-
-    @node_from(from_name='检查配置', status='电池合成')
-    @node_from(from_name='母盘合成', status='电池合成')
-    @operation_node(name='电池合成')
-    def source_ether_battery(self) -> OperationRoundResult:
-        """执行电池合成操作"""
-        op = EtherBatterySynthesisOp(self.ctx, self.config)
-        result = self.round_by_op_result(op.execute())
-
-        if result.is_success:
-            self.current_task_index += 1
-            return self._get_next_task_status()
-        return result
-
     # ==================== 完成节点 ====================
 
     @node_from(from_name='检查配置', status='全部完成')
     @node_from(from_name='检查配置', status='无任务')
     @node_from(from_name='母盘合成', status='全部完成')
-    @node_from(from_name='电池合成', status='全部完成')
     @operation_node(name='最终返回')
     def final_return(self) -> OperationRoundResult:
         """最终返回大世界"""
