@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.1.0",
   "updated_at": "2026-04-27T00:00:00Z",
   "url": "https://github.com/Usagi-wusaqi/zzz-onedragon-plugins/archive/refs/heads/main.zip",
   "plugins": [
@@ -11,6 +11,17 @@
       "author": "Usagi-wusaqi",
       "homepage": "https://github.com/Usagi-wusaqi/zzz-onedragon-plugins",
       "tags": ["示例", "模板"],
+      "default_group": true,
+      "last_updated": "2026-04-27"
+    },
+    {
+      "id": "ether_battery",
+      "name": "以太电池",
+      "version": "1.0.0",
+      "description": "自动用储值电卡和电量合成以太电池",
+      "author": "Usagi-wusaqi",
+      "homepage": "https://github.com/Usagi-wusaqi/zzz-onedragon-plugins",
+      "tags": ["自动化", "合成", "电卡"],
       "default_group": true,
       "last_updated": "2026-04-27"
     }
